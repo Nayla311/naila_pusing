@@ -13,7 +13,7 @@ analyzer:
     annotate_overrides: ignore
     duplicate_import: ignore
     avoid_print: ignore
-    depend_on_referenced_packages: ignore 
+    depend_on_referenced_packages: ignore ignore ignore 
 include: package:flutter_lints/flutter.yaml
 
 linter:

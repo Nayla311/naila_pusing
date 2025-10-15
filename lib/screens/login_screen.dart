@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart';
-import 'home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:naila_pusing/models/user.dart';
+import 'package:naila_pusing/utils/dummy_data.dart'; // <-- pastikan ada
+import 'package:naila_pusing/screens/home_screen.dart';
+import 'package:naila_pusing/screens/register_screen.dart';
+import 'package:naila_pusing/screens/admin/admin_dashboard.dart'; // <-- pastikan ada
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,37 +20,80 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  String? savedEmail;
+  String? savedPassword;
+  String? savedName;
+
+  User? loggedInUser;
+  Widget? nextScreen;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadUserData();
   }
 
-  void _handleLogin() async {
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      savedEmail = prefs.getString('email');
+      savedPassword = prefs.getString('password');
+      savedName = prefs.getString('name');
+    });
+  }
+
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
-      // Simulate login process
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 1));
 
-      if (mounted) {
-        // Create user object
-        final user = User(
-          _emailController.text,
-          _passwordController.text,
-          '',
+      // ✅ Login Admin
+      if (_emailController.text == dummyAdminUser.email &&
+          _passwordController.text == dummyAdminUser.password) {
+        loggedInUser = dummyAdminUser;
+        nextScreen = AdminDashboard(adminUser: loggedInUser!);
+      }
+      // ✅ Login User biasa dari SharedPreferences
+      else if (savedEmail != null &&
+          savedPassword != null &&
+          _emailController.text == savedEmail &&
+          _passwordController.text == savedPassword) {
+        loggedInUser = User(
+          savedEmail!,
+          savedPassword!,
+          savedName ?? '',
           DateTime.now(),
+          role: 'user',
         );
+        nextScreen = HomeScreen(user: loggedInUser!);
+      }
+      // ✅ Belum daftar
+      else if (savedEmail == null || savedPassword == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Belum ada akun terdaftar! Silakan daftar dulu."),
+            backgroundColor: Colors.pink,
+          ),
+        );
+      }
+      // ✅ Email / password salah
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Email atau password salah!"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
 
+      // ✅ Jika login sukses
+      if (loggedInUser != null && nextScreen != null && mounted) {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) {
-              return HomeScreen(user: user);
+              return nextScreen!;
             },
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -65,9 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -82,9 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Form(
               key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo - Mengganti icon dengan gambar logo
+                  // Logo
                   Container(
                     width: 160,
                     height: 160,
@@ -114,12 +158,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           'assets/logo.png',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
-                            // Fallback ke icon original jika logo gagal dimuat
                             return Container(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
                                   colors: [
                                     Colors.pink.shade100,
                                     Colors.pink.shade200,
@@ -186,17 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.pink.shade100),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(
-                          color: Colors.pink.shade300,
-                          width: 2,
-                        ),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -228,9 +258,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.pink,
                         ),
                         onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
+                          setState(
+                            () => _isPasswordVisible = !_isPasswordVisible,
+                          );
                         },
                       ),
                       filled: true,
@@ -238,17 +268,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.pink.shade100),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(
-                          color: Colors.pink.shade300,
-                          width: 2,
-                        ),
                       ),
                     ),
                   ),
@@ -263,8 +282,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.pink,
                         foregroundColor: Colors.white,
-                        elevation: 5,
-                        shadowColor: Colors.pink.withOpacity(0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -282,10 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 SizedBox(width: 10),
-                                Text(
-                                  "Logging in...",
-                                  style: TextStyle(fontSize: 16),
-                                ),
+                                Text("Logging in..."),
                               ],
                             )
                           : const Text(
@@ -299,12 +313,38 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
+                  // Register Redirect
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Belum punya akun? "),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "Daftar Sekarang",
+                          style: TextStyle(
+                            color: Colors.pink,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
                   // Forgot Password
                   TextButton(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Password reset feature coming soon!'),
+                          content: Text('Fitur reset password belum tersedia!'),
                           backgroundColor: Colors.pink,
                         ),
                       );

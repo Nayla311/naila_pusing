@@ -1,3 +1,4 @@
+// lib/models/service.dart
 abstract class Service {
   String _title;
   String _description;
@@ -15,7 +16,7 @@ abstract class Service {
     this._icon,
   );
 
-  // Encapsulation - Getters
+  // Getters
   String get title => _title;
   String get description => _description;
   String get price => _price;
@@ -23,12 +24,12 @@ abstract class Service {
   String get duration => _duration;
   String get icon => _icon;
 
-  // Encapsulation - Setters
+  // Setters
   set title(String value) => _title = value;
   set description(String value) => _description = value;
   set price(String value) => _price = value;
 
-  // Abstract methods - Polymorphism
+  // Abstract methods
   String displayInfo();
   String getServiceType();
   List<String> getServiceFeatures();

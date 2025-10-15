@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:naila_pusing/screens/menu_detail_screen.dart';
+import 'package:naila_pusing/screens/order_screen.dart';
 import '../models/user.dart';
 import '../models/service.dart';
 import '../models/makeup_service.dart';
 import '../models/nail_service.dart';
 import '../models/hair_service.dart';
 import '../models/facial_service.dart';
+import '../models/order.dart';
 
 class HomeScreen extends StatefulWidget {
   final User user;
@@ -22,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'All';
   String _searchQuery = '';
   bool _isSearchActive = false;
+  List<Order> orders = [];
 
   @override
   void initState() {
@@ -105,7 +108,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ? _buildSearchField()
             : Row(
                 children: [
-                  // Logo di AppBar
                   Container(
                     width: 30,
                     height: 30,
@@ -322,7 +324,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          // Logo di Welcome Section
           Container(
             width: 80,
             height: 80,
@@ -421,6 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () => _showBookingInfo(context),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.pink,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     side: BorderSide(color: Colors.pink.shade300),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -445,27 +447,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showBookingInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.calendar_today, color: Colors.pink),
-            SizedBox(width: 8),
-            Text('Book Appointment'),
-          ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrdersScreen(
+          orders: orders,
+          userName: widget.user.getDisplayName(),
         ),
-        content: const Text(
-          'Choose a service below to book your appointment. We offer flexible scheduling and professional beauty treatments.',
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
-            child: const Text('Got it', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
@@ -558,8 +546,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
           ],
-
-          // Main ListView for Beauty Services
           if (services.isNotEmpty)
             ListView.builder(
               shrinkWrap: true,
@@ -606,7 +592,15 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => DetailScreen(service: service),
+              builder: (context) => DetailScreen(
+                service: service,
+                userName: widget.user.getDisplayName(),
+                onOrderCreated: (order) {
+                  setState(() {
+                    orders.add(order);
+                  });
+                },
+              ),
             ),
           );
         },
@@ -615,7 +609,6 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              // Service Icon diganti dengan gambar logo
               Container(
                 width: 80,
                 height: 80,
@@ -651,13 +644,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-
-              // Service Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Service Title with highlight
                     RichText(
                       text: _buildHighlightedText(
                         service.title,
@@ -676,8 +666,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-
-                    // Service Description with highlight
                     RichText(
                       text: _buildHighlightedText(
                         service.description,
@@ -698,11 +686,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 12),
-
-                    // Service Info Row
                     Row(
                       children: [
-                        // Category Badge
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -722,8 +707,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-
-                        // Duration
                         Icon(
                           Icons.access_time,
                           size: 14,
@@ -737,10 +720,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.grey.shade500,
                           ),
                         ),
-
                         const Spacer(),
-
-                        // Price
                         Text(
                           service.price,
                           style: TextStyle(
@@ -754,10 +734,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(width: 12),
-
-              // Arrow Button
               Container(
                 width: 40,
                 height: 40,
